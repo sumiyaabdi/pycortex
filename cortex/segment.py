@@ -182,7 +182,7 @@ def cut_surface(cx_subject, hemi, name='flatten', fs_subject=None, data=None,
         blender.fs_cut(fname, fs_subject, hemi, freesurfer_subject_dir)
     # Add localizer data to facilitate cutting
     if data is not None:
-        blender.add_cutdata(fname, data, name=data.description)
+        blender.add_cutdata(fname, data, hemi,name=data.description)
     blender_cmd = options.config.get('dependency_paths', 'blender')
     sp.call([blender_cmd, fname])
     patchpath = freesurfer.get_paths(fs_subject, hemi,

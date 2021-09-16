@@ -40,7 +40,7 @@ def _call_blender(filename, code, blender_path=default_blender):
         tf.flush()
         sp.check_call([w.encode() for w in shlex.split(cmd)],)
 
-def add_cutdata(fname, braindata, name="retinotopy", projection="nearest", mesh="hemi"):
+def add_cutdata(fname, braindata, hemi, name="retinotopy", projection="nearest", mesh="hemi"):
     """Add data as vertex colors to blender mesh
     
     Useful to add localizer data for help in placing flatmap cuts
@@ -62,11 +62,11 @@ def add_cutdata(fname, braindata, name="retinotopy", projection="nearest", mesh=
     """
     if isinstance(braindata, dataset.Dataset):
         for view_name, data in braindata.views.items():
-            add_cutdata(fname, data, name=view_name, projection=projection, mesh=mesh)
+            add_cutdata(fname, data, hemi,name=view_name, projection=projection, mesh=mesh)
         return
     from matplotlib import cm
     braindata = dataset.normalize(braindata)
-    mapped = braindata.map(projection)
+    mapped = braindata.map(briandata.subject)
     left = mapped.left
     right = mapped.right
 
@@ -83,8 +83,14 @@ def add_cutdata(fname, braindata, name="retinotopy", projection="nearest", mesh=
 
     p.pack_string(mesh)
     p.pack_string(name)
-    p.pack_array(lcolor.ravel(), p.pack_double)
-    p.pack_array(rcolor.ravel(), p.pack_double)
+    
+    if hemi=='lh':
+        dat2add=lcolor
+    else:
+        dat2add=rcolor
+
+    p.pack_array(dat2add.ravel(), p.pack_double)
+
     with tempfile.NamedTemporaryFile() as tf:
         tf.write(p.get_buffer())
         tf.flush()
@@ -92,13 +98,12 @@ def add_cutdata(fname, braindata, name="retinotopy", projection="nearest", mesh=
             u = xdrlib.Unpacker(fp.read())
             mesh = u.unpack_string().decode('utf-8')
             name = u.unpack_string().decode('utf-8')
-            left = u.unpack_array(u.unpack_double)
-            right = u.unpack_array(u.unpack_double)
-            lcolor = blendlib._repack(left)
-            rcolor = blendlib._repack(right)
-            print(len(lcolor), len(rcolor))
-            blendlib.add_vcolor((lcolor, rcolor), mesh, name)
+            hemdat= u.unpack_array(u.unpack_double)
+            ccolor = blendlib._repack(hemdat)
+            blendlib.add_vcolor(ccolor, mesh, name)
         """.format(tfname=tf.name)
+
+        print(code)
         _call_blender(fname, code)
 
     return 

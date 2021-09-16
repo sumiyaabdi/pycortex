@@ -66,7 +66,12 @@ def add_cutdata(fname, braindata, hemi, name="retinotopy", projection="nearest",
         return
     from matplotlib import cm
     braindata = dataset.normalize(braindata)
-    mapped = braindata.map(briandata.subject)
+    
+    if not isinstance(braindata, dataset.braindata.VertexData):
+        mapped = braindata.map(projection)
+    else:
+        mapped = braindata    
+    
     left = mapped.left
     right = mapped.right
 
